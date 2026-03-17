@@ -1,0 +1,40 @@
+name: Build frei0r Plugin
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: handy_vhs-linux-x64
+            ext: .so
+          - os: macos-latest
+            artifact: handy_vhs-macos-x64
+            ext: .dylib
+          - os: windows-latest
+            artifact: handy_vhs-windows-x64
+            ext: .dll
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build -S .
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: build/handy_vhs${{ matrix.ext }}
