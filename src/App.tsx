@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { ImageUp, Download, Settings } from 'lucide-react';
 import HandyVHS, { type VHSParams } from './lib/HandyVHS';
 import './App.css';
 
@@ -38,7 +39,6 @@ function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [params, setParams] = useState<VHSParams>(defaultParams);
   const [autoResolution, setAutoResolution] = useState(true);
-  const [processing, setProcessing] = useState(false);
   const [hasImage, setHasImage] = useState(false);
 
   const srcCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -56,18 +56,13 @@ function App() {
     if (!vhsRef.current || !srcCanvasRef.current || !dstCanvasRef.current) return;
     if (!srcCanvasRef.current.width) return;
 
-    setProcessing(true);
     const processParams = autoResolution ? { ...params, vhs_resolution: 0 } : params;
-    
-    setTimeout(() => {
-      const ctx = srcCanvasRef.current!.getContext('2d')!;
-      vhsRef.current!.originalImageData = ctx.getImageData(0, 0, srcCanvasRef.current!.width, srcCanvasRef.current!.height);
-      vhsRef.current!.canvas.width = srcCanvasRef.current!.width;
-      vhsRef.current!.canvas.height = srcCanvasRef.current!.height;
-      vhsRef.current!.setParams(processParams);
-      vhsRef.current!.process();
-      setProcessing(false);
-    }, 50);
+    const ctx = srcCanvasRef.current.getContext('2d')!;
+    vhsRef.current.originalImageData = ctx.getImageData(0, 0, srcCanvasRef.current.width, srcCanvasRef.current.height);
+    vhsRef.current.canvas.width = srcCanvasRef.current.width;
+    vhsRef.current.canvas.height = srcCanvasRef.current.height;
+    vhsRef.current.setParams(processParams);
+    vhsRef.current.process();
   }, [params, autoResolution]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,7 +88,7 @@ function App() {
       URL.revokeObjectURL(url);
       setHasImage(true);
       setShowVHS(true);
-      setTimeout(processImage, 100);
+      setTimeout(processImage, 50);
     };
     img.src = url;
   }, [processImage]);
@@ -153,17 +148,21 @@ function App() {
     </div>
   );
 
-return (
+  return (
     <div className="app">
       <div className="toolbar">
-        <button className={showVHS ? 'active' : ''} onClick={() => setShowVHS(!showVHS)}>
+        <button className={showVHS ? 'active' : ''} onClick={() => setShowVHS(!showVHS)} title="Toggle View">
           {showVHS ? 'VHS' : 'Original'}
         </button>
-        <button className={panelOpen ? 'active' : ''} onClick={() => setPanelOpen(!panelOpen)}>
-          ⚙️
+        <button className={panelOpen ? 'active' : ''} onClick={() => setPanelOpen(!panelOpen)} title="Settings">
+          <Settings size={20} />
         </button>
-        <button onClick={() => fileInputRef.current?.click()}>📁</button>
-        <button onClick={handleDownload}>💾</button>
+        <button onClick={() => fileInputRef.current?.click()} title="Upload Image">
+          <ImageUp size={20} />
+        </button>
+        <button onClick={handleDownload} title="Download">
+          <Download size={20} />
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -177,7 +176,6 @@ return (
         <div className="workspace">
           <canvas ref={srcCanvasRef} style={{ display: showVHS ? 'none' : 'block' }} />
           <canvas ref={dstCanvasRef} style={{ display: showVHS ? 'block' : 'none' }} />
-          {processing && <div className="processing"><div className="spinner" /></div>}
         </div>
 
         <div className={`panel ${panelOpen ? 'open' : ''}`}>
