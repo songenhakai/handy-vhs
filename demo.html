@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEISEI-VHS Simple Demo</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 { text-align: center; margin-bottom: 20px; font-size: 24px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .canvas-wrap {
+            display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+            margin-bottom: 20px;
+        }
+        .canvas-box { background: #2a2a2a; padding: 10px; border-radius: 8px; }
+        .canvas-box h3 { margin-bottom: 10px; font-size: 14px; color: #888; }
+        canvas { max-width: 100%; height: auto; border-radius: 4px; }
+        .controls {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        .section:last-child { border-bottom: none; margin-bottom: 0; }
+        .section h4 { color: #4ab0d9; margin-bottom: 10px; font-size: 14px; }
+        .row { display: flex; align-items: center; margin-bottom: 8px; gap: 10px; }
+        .row label { min-width: 140px; font-size: 13px; }
+        .row input[type="range"] { flex: 1; }
+        .row .val { min-width: 50px; text-align: right; font-family: monospace; color: #ff6b6b; }
+        .row input[type="checkbox"] { width: 18px; height: 18px; }
+        .btn-wrap { text-align: center; margin-top: 20px; }
+        button {
+            background: #ff6b6b;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        button:hover { background: #ff4757; }
+        button.secondary { background: #4ab0d9; }
+        button.secondary:hover { background: #3a9fc8; }
+        .upload-btn {
+            background: #4ab0d9;
+            cursor: pointer;
+            display: inline-block;
+        }
+        #file-input { display: none; }
+    </style>
+</head>
+<body>
+    <h1>HEISEI-VHS Simple (JavaScript)</h1>
+    
+    <div class="container">
+        <div class="canvas-wrap">
+            <div class="canvas-box">
+                <h3>Original</h3>
+                <canvas id="src-canvas"></canvas>
+            </div>
+            <div class="canvas-box">
+                <h3>VHS Effect</h3>
+                <canvas id="dst-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="section">
+                <h4>Digital Layer</h4>
+                <div class="row">
+                    <label><input type="checkbox" id="p_apply_jpeg" checked> JPEG Artifacts</label>
+                    <input type="range" id="p_jpeg_quality" min="1" max="100" value="100">
+                    <span class="val" id="v_jpeg_quality">100</span>
+                </div>
+                <div class="row">
+                    <label>Black Crush</label>
+                    <input type="range" id="p_tone_low" min="0" max="50" value="17">
+                    <span class="val" id="v_tone_low">17</span>
+                </div>
+                <div class="row">
+                    <label>White Blowout</label>
+                    <input type="range" id="p_tone_high" min="200" max="255" value="232">
+                    <span class="val" id="v_tone_high">232</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h4>Hardware Layer</h4>
+                <div class="row">
+                    <label><input type="checkbox" id="p_apply_ringing" checked> Ringing</label>
+                    <input type="range" id="p_sharpen_amount" min="0" max="10" step="0.1" value="3.0">
+                    <span class="val" id="v_sharpen_amount">3.0</span>
+                </div>
+                <div class="row">
+                    <label><input type="checkbox" id="p_apply_color_cast" checked> Color Cast</label>
+                </div>
+                <div class="row">
+                    <label>Red Tint</label>
+                    <input type="range" id="p_cast_r" min="0.8" max="1.2" step="0.01" value="0.95">
+                    <span class="val" id="v_cast_r">0.95</span>
+                </div>
+                <div class="row">
+                    <label>Green Tint</label>
+                    <input type="range" id="p_cast_g" min="0.8" max="1.2" step="0.01" value="1.05">
+                    <span class="val" id="v_cast_g">1.05</span>
+                </div>
+                <div class="row">
+                    <label>Blue Tint</label>
+                    <input type="range" id="p_cast_b" min="0.8" max="1.2" step="0.01" value="1.00">
+                    <span class="val" id="v_cast_b">1.00</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h4>Analog Layer</h4>
+                <div class="row">
+                    <label>VHS Resolution</label>
+                    <input type="range" id="p_vhs_resolution" min="160" max="640" step="10" value="320">
+                    <span class="val" id="v_vhs_resolution">320</span>
+                </div>
+                <div class="row">
+                    <label>Blur Level</label>
+                    <input type="range" id="p_cutoff_y" min="0.01" max="1.0" step="0.01" value="0.40">
+                    <span class="val" id="v_cutoff_y">0.40</span>
+                </div>
+                <div class="row">
+                    <label>Chroma Shift</label>
+                    <input type="range" id="p_chroma_shift_x" min="0" max="15" value="3">
+                    <span class="val" id="v_chroma_shift_x">3</span>
+                </div>
+                <div class="row">
+                    <label>Luma Noise</label>
+                    <input type="range" id="p_noise_intensity_y" min="0" max="0.1" step="0.001" value="0.020">
+                    <span class="val" id="v_noise_intensity_y">0.020</span>
+                </div>
+                <div class="row">
+                    <label>Chroma Noise</label>
+                    <input type="range" id="p_noise_intensity_c" min="0" max="0.1" step="0.001" value="0.010">
+                    <span class="val" id="v_noise_intensity_c">0.010</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h4>Mechanical Errors</h4>
+                <div class="row">
+                    <label>Jitter Amp</label>
+                    <input type="range" id="p_jitter_amp" min="0" max="5" step="0.1" value="0.5">
+                    <span class="val" id="v_jitter_amp">0.5</span>
+                </div>
+                <div class="row">
+                    <label>Head Switch</label>
+                    <input type="range" id="p_head_switch_rows" min="0" max="50" value="8">
+                    <span class="val" id="v_head_switch_rows">8</span>
+                </div>
+                <div class="row">
+                    <label>Dropout Count</label>
+                    <input type="range" id="p_dropout_count" min="0" max="50" value="2">
+                    <span class="val" id="v_dropout_count">2</span>
+                </div>
+                <div class="row">
+                    <label><input type="checkbox" id="p_apply_scanlines" checked> Scanlines</label>
+                    <input type="range" id="p_scanline_weight" min="0.5" max="1.0" step="0.01" value="0.97">
+                    <span class="val" id="v_scanline_weight">0.97</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-wrap">
+            <label class="upload-btn button">
+                <input type="file" id="file-input" accept="image/*">
+                Upload Image
+            </label>
+            <button id="btn-process">Process</button>
+            <button id="btn-download" class="secondary">Download</button>
+        </div>
+    </div>
+
+    <script src="Heisei-VHS-simple.js"></script>
+    <script>
+        const srcCanvas = document.getElementById('src-canvas');
+        const dstCanvas = document.getElementById('dst-canvas');
+        const vhs = new HeiseiVHS(dstCanvas);
+
+        document.getElementById('file-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                const maxDim = 500;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                    const ratio = Math.min(maxDim / w, maxDim / h);
+                    w = Math.floor(w * ratio);
+                    h = Math.floor(h * ratio);
+                }
+                srcCanvas.width = w;
+                srcCanvas.height = h;
+                srcCanvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                URL.revokeObjectURL(url);
+                autoProcess();
+            };
+            img.src = url;
+        });
+
+        let processTimeout = null;
+        let isProcessing = false;
+
+        function getParams() {
+            return {
+                apply_jpeg: document.getElementById('p_apply_jpeg').checked,
+                jpeg_quality: parseFloat(document.getElementById('p_jpeg_quality').value),
+                apply_strong_ringing: document.getElementById('p_apply_ringing').checked,
+                sharpen_amount: parseFloat(document.getElementById('p_sharpen_amount').value),
+                tone_low: parseFloat(document.getElementById('p_tone_low').value),
+                tone_high: parseFloat(document.getElementById('p_tone_high').value),
+                vhs_resolution: parseInt(document.getElementById('p_vhs_resolution').value),
+                cutoff_y: parseFloat(document.getElementById('p_cutoff_y').value),
+                chroma_shift_x: parseInt(document.getElementById('p_chroma_shift_x').value),
+                noise_intensity_y: parseFloat(document.getElementById('p_noise_intensity_y').value),
+                noise_intensity_c: parseFloat(document.getElementById('p_noise_intensity_c').value),
+                jitter_amp: parseFloat(document.getElementById('p_jitter_amp').value),
+                head_switch_rows: parseInt(document.getElementById('p_head_switch_rows').value),
+                dropout_count: parseInt(document.getElementById('p_dropout_count').value),
+                apply_color_cast: document.getElementById('p_apply_color_cast').checked,
+                cast_r: parseFloat(document.getElementById('p_cast_r').value),
+                cast_g: parseFloat(document.getElementById('p_cast_g').value),
+                cast_b: parseFloat(document.getElementById('p_cast_b').value),
+                apply_scanlines: document.getElementById('p_apply_scanlines').checked,
+                scanline_weight: parseFloat(document.getElementById('p_scanline_weight').value)
+            };
+        }
+
+        function autoProcess() {
+            if (!srcCanvas.width || isProcessing) return;
+            
+            clearTimeout(processTimeout);
+            processTimeout = setTimeout(() => {
+                isProcessing = true;
+                vhs.setParams(getParams());
+                vhs.originalImageData = srcCanvas.getContext('2d').getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+                vhs.canvas.width = srcCanvas.width;
+                vhs.canvas.height = srcCanvas.height;
+                vhs.process();
+                isProcessing = false;
+            }, 100);
+        }
+
+        document.querySelectorAll('input[type="range"]').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const valId = 'v_' + e.target.id.replace('p_', '');
+                document.getElementById(valId).textContent = e.target.value;
+                autoProcess();
+            });
+        });
+
+        document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+            input.addEventListener('change', autoProcess);
+        });
+
+        document.getElementById('btn-process').addEventListener('click', () => {
+            if (!srcCanvas.width) {
+                alert('Please upload an image first');
+                return;
+            }
+            vhs.setParams(getParams());
+            vhs.originalImageData = srcCanvas.getContext('2d').getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+            vhs.canvas.width = srcCanvas.width;
+            vhs.canvas.height = srcCanvas.height;
+            vhs.process();
+        });
+
+        document.getElementById('btn-download').addEventListener('click', () => {
+            if (!dstCanvas.width) {
+                alert('Please process an image first');
+                return;
+            }
+            vhs.download();
+        });
+
+        (async () => {
+            const demoImg = new Image();
+            demoImg.crossOrigin = 'anonymous';
+            demoImg.onload = () => {
+                srcCanvas.width = 256;
+                srcCanvas.height = 256;
+                srcCanvas.getContext('2d').drawImage(demoImg, 0, 0, 256, 256);
+            };
+            demoImg.src = 'data:image/svg+xml,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">
+                    <defs>
+                        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ff6b6b"/>
+                            <stop offset="100%" style="stop-color:#4ab0d9"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="256" height="256" fill="url(#g1)"/>
+                    <text x="128" y="128" text-anchor="middle" dominant-baseline="middle" 
+                          font-family="Arial" font-size="24" fill="white">Demo Image</text>
+                </svg>
+            `);
+        })();
+    </script>
+</body>
+</html>
