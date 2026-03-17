@@ -4,8 +4,6 @@ import HandyVHS, { type VHSParams } from './lib/HandyVHS';
 import './App.css';
 
 const defaultParams: VHSParams = {
-  apply_jpeg: true,
-  jpeg_quality: 100,
   apply_strong_ringing: true,
   sharpen_amount: 2.6,
   sharpen_size: 2,
@@ -211,8 +209,6 @@ function App() {
           <div className="panel-content">
             <div className="section">
               <h4>Digital Layer</h4>
-              <Checkbox label="JPEG" id="apply_jpeg" checked={params.apply_jpeg} />
-              <Slider label="Quality" id="jpeg_quality" min={1} max={100} step={1} value={params.jpeg_quality} />
               <Slider label="Black Crush" id="tone_low" min={0} max={50} step={1} value={params.tone_low} />
               <Slider label="White Blowout" id="tone_high" min={200} max={255} step={1} value={params.tone_high} />
             </div>

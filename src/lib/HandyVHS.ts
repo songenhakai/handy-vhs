@@ -1,6 +1,4 @@
 export interface VHSParams {
-  apply_jpeg: boolean;
-  jpeg_quality: number;
   apply_strong_ringing: boolean;
   sharpen_amount: number;
   sharpen_size: number;
@@ -30,8 +28,6 @@ export interface VHSParams {
 }
 
 const defaultParams: VHSParams = {
-  apply_jpeg: true,
-  jpeg_quality: 100,
   apply_strong_ringing: true,
   sharpen_amount: 2.6,
   sharpen_size: 2,
@@ -186,10 +182,6 @@ export class HandyVHS {
 
     if (this.params.apply_scanlines) {
       this._applyScanlines(finalData, finalWidth, finalHeight);
-    }
-
-    if (this.params.apply_jpeg) {
-      this._applyJPEGArtifacts(finalData, finalWidth, finalHeight);
     }
 
     const outputData = new ImageData(finalData, finalWidth, finalHeight);
@@ -482,37 +474,6 @@ export class HandyVHS {
         data[idx] = Math.round(data[idx] * scanline_weight);
         data[idx + 1] = Math.round(data[idx + 1] * scanline_weight);
         data[idx + 2] = Math.round(data[idx + 2] * scanline_weight);
-      }
-    }
-  }
-
-  private _applyJPEGArtifacts(data: Uint8ClampedArray, width: number, height: number): void {
-    const blockSize = 8;
-    const quality = this.params.jpeg_quality;
-    const strength = Math.max(0, (100 - quality) / 100);
-
-    if (strength === 0) return;
-
-    for (let by = 0; by < height; by += blockSize) {
-      for (let bx = 0; bx < width; bx += blockSize) {
-        for (let dy = 0; dy < blockSize && by + dy < height; dy++) {
-          for (let dx = 0; dx < blockSize && bx + dx < width; dx++) {
-            const idx = ((by + dy) * width + (bx + dx)) * 4;
-
-            const blockNoise = strength * 30;
-            data[idx] = Math.max(0, Math.min(255, data[idx] + Math.round((this.rng() - 0.5) * blockNoise)));
-            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + Math.round((this.rng() - 0.5) * blockNoise)));
-            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + Math.round((this.rng() - 0.5) * blockNoise)));
-
-            const isEdge = dx === 0 || dx === blockSize - 1 || dy === 0 || dy === blockSize - 1;
-            if (isEdge && strength > 0.3) {
-              const edgeStrength = strength * 5;
-              data[idx] = Math.max(0, Math.min(255, data[idx] + Math.round((this.rng() - 0.5) * edgeStrength)));
-              data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + Math.round((this.rng() - 0.5) * edgeStrength)));
-              data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + Math.round((this.rng() - 0.5) * edgeStrength)));
-            }
-          }
-        }
       }
     }
   }
