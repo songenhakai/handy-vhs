@@ -38,13 +38,13 @@ function App() {
   const [showVHS, setShowVHS] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const [params, setParams] = useState<VHSParams>(defaultParams);
-  const [autoResolution, setAutoResolution] = useState(true);
   const [hasImage, setHasImage] = useState(false);
 
   const srcCanvasRef = useRef<HTMLCanvasElement>(null);
   const dstCanvasRef = useRef<HTMLCanvasElement>(null);
   const vhsRef = useRef<HandyVHS | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const processTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (dstCanvasRef.current) {
@@ -52,18 +52,33 @@ function App() {
     }
   }, []);
 
-  const processImage = useCallback(() => {
+  const processImage = useCallback((paramsToUse: VHSParams) => {
     if (!vhsRef.current || !srcCanvasRef.current || !dstCanvasRef.current) return;
     if (!srcCanvasRef.current.width) return;
 
-    const processParams = autoResolution ? { ...params, vhs_resolution: 0 } : params;
     const ctx = srcCanvasRef.current.getContext('2d')!;
     vhsRef.current.originalImageData = ctx.getImageData(0, 0, srcCanvasRef.current.width, srcCanvasRef.current.height);
     vhsRef.current.canvas.width = srcCanvasRef.current.width;
     vhsRef.current.canvas.height = srcCanvasRef.current.height;
-    vhsRef.current.setParams(processParams);
+    vhsRef.current.setParams(paramsToUse);
     vhsRef.current.process();
-  }, [params, autoResolution]);
+  }, []);
+
+  const calcAutoResolution = useCallback(() => {
+    if (!srcCanvasRef.current || !srcCanvasRef.current.width) return 300;
+    const origWidth = srcCanvasRef.current.width;
+    const origHeight = srcCanvasRef.current.height;
+    const aspectRatio = origWidth / origHeight;
+    const targetHeight = Math.min(360, origHeight / 2);
+    let vhsWidth = Math.round(targetHeight * aspectRatio);
+    vhsWidth = Math.max(200, Math.min(480, vhsWidth));
+    return vhsWidth;
+  }, []);
+
+  const handleAutoResolution = useCallback(() => {
+    const res = calcAutoResolution();
+    setParams(prev => ({ ...prev, vhs_resolution: res }));
+  }, [calcAutoResolution]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,10 +103,11 @@ function App() {
       URL.revokeObjectURL(url);
       setHasImage(true);
       setShowVHS(true);
-      setTimeout(processImage, 50);
+      const autoRes = calcAutoResolution();
+      setParams(prev => ({ ...prev, vhs_resolution: autoRes }));
     };
     img.src = url;
-  }, [processImage]);
+  }, [calcAutoResolution]);
 
   const handleDownload = useCallback(() => {
     if (vhsRef.current) {
@@ -104,10 +120,19 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (hasImage) {
-      processImage();
+    if (!hasImage) return;
+    if (processTimeoutRef.current) {
+      clearTimeout(processTimeoutRef.current);
     }
-  }, [params, autoResolution, processImage, hasImage]);
+    processTimeoutRef.current = window.setTimeout(() => {
+      processImage(params);
+    }, 100);
+    return () => {
+      if (processTimeoutRef.current) {
+        clearTimeout(processTimeoutRef.current);
+      }
+    };
+  }, [params, hasImage, processImage]);
 
   const Slider = ({ label, id, min, max, step, value }: {
     label: string;
@@ -205,14 +230,18 @@ function App() {
             <div className="section">
               <h4>Analog Layer</h4>
               <div className="row">
-                <label>
-                  <input type="checkbox" checked={autoResolution} onChange={e => setAutoResolution(e.target.checked)} />
-                  Auto Resolution
-                </label>
+                <label>Resolution</label>
+                <button className="auto-btn" onClick={handleAutoResolution} title="Auto-detect optimal resolution">Auto</button>
+                <input
+                  type="range"
+                  min={80}
+                  max={600}
+                  step={10}
+                  value={params.vhs_resolution}
+                  onChange={e => updateParam('vhs_resolution', parseInt(e.target.value))}
+                />
+                <span className="val">{params.vhs_resolution}</span>
               </div>
-              {!autoResolution && (
-                <Slider label="Resolution" id="vhs_resolution" min={160} max={480} step={10} value={params.vhs_resolution} />
-              )}
               <Slider label="Blur" id="cutoff_y" min={0.01} max={1.0} step={0.01} value={params.cutoff_y} />
               <Slider label="Chroma Shift" id="chroma_shift_x" min={0} max={15} step={1} value={params.chroma_shift_x} />
               <Slider label="Luma Noise" id="noise_intensity_y" min={0} max={0.1} step={0.001} value={params.noise_intensity_y} />

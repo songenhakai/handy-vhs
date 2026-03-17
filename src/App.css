@@ -189,3 +189,20 @@
   height: 16px;
   accent-color: #ff6b6b;
 }
+
+.auto-btn {
+  background: #333;
+  border: 1px solid #555;
+  color: #aaa;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.auto-btn:hover {
+  background: #ff6b6b;
+  border-color: #ff6b6b;
+  color: #fff;
+}
