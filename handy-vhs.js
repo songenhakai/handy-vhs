@@ -82,9 +82,9 @@ class HandyVHS {
         let vhsWidth;
         if (this.params.vhs_resolution <= 0) {
             const aspectRatio = origWidth / origHeight;
-            const targetHeight = Math.min(288, origHeight / 3);
+            const targetHeight = Math.min(360, origHeight / 2);
             vhsWidth = Math.round(targetHeight * aspectRatio);
-            vhsWidth = Math.max(160, Math.min(400, vhsWidth));
+            vhsWidth = Math.max(200, Math.min(480, vhsWidth));
         } else {
             vhsWidth = Math.min(this.params.vhs_resolution, origWidth);
         }
