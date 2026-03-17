@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-add_library(handy_vhs MODULE src/handy_vhs.c)
+add_library(handy_vhs MODULE src/plugin/handy_vhs.c)
 
 set_target_properties(handy_vhs PROPERTIES
     PREFIX ""
@@ -26,4 +26,4 @@ elseif(WIN32)
     )
 endif()
 
-target_include_directories(handy_vhs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(handy_vhs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/plugin)
