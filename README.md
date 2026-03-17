@@ -1,4 +1,4 @@
-# HEISEI-VHS frei0r Plugin
+# Handy-VHS frei0r Plugin
 
 VHS effect plugin for video editors (Shotcut, Kdenlive, etc.)
 
@@ -13,7 +13,7 @@ make
 
 ## Install
 
-Copy `heisei_vhs.so` (Linux), `heisei_vhs.dylib` (macOS), or `heisei_vhs.dll` (Windows) to your frei0r plugin directory:
+Copy `handy_vhs.so` (Linux), `handy_vhs.dylib` (macOS), or `handy_vhs.dll` (Windows) to your frei0r plugin directory:
 
 - Linux: `/usr/lib/frei0r-1/` or `~/.frei0r-1/`
 - macOS: `/usr/local/lib/frei0r-1/` or `~/.frei0r-1/`

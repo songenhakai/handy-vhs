@@ -1,4 +1,4 @@
-class HeiseiVHS {
+class HandyVHS {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
@@ -555,5 +555,5 @@ class HeiseiVHS {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = HeiseiVHS;
+    module.exports = HandyVHS;
 }

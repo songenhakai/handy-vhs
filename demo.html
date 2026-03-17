@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEISEI-VHS Simple</title>
+    <title>Handy VHS</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -247,13 +247,13 @@
         </div>
         <div class="status-bar">
             <span id="status">Ready</span>
-            <span class="info">HEISEI-VHS Simple</span>
+            <span class="info">Handy VHS</span>
         </div>
     </div>
     
     <div class="panel" id="panel">
         <div class="panel-header">
-            <h2>Parameters</h2>
+            <h2>Handy VHS</h2>
             <button id="btn-close-panel" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;">&times;</button>
         </div>
         <div class="panel-content">
@@ -366,13 +366,13 @@
 
     <input type="file" id="file-input" accept="image/*" style="display:none">
 
-    <script src="Heisei-VHS-simple.js"></script>
+    <script src="handy-vhs.js"></script>
     <script>
         const srcCanvas = document.getElementById('src-canvas');
         const dstCanvas = document.getElementById('dst-canvas');
         const panel = document.getElementById('panel');
         const processing = document.getElementById('processing');
-        const vhs = new HeiseiVHS(dstCanvas);
+        const vhs = new HandyVHS(dstCanvas);
         let showVHS = true;
         let hasProcessedImage = false;
 

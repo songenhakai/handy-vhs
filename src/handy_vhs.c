@@ -35,9 +35,9 @@ typedef struct {
     double apply_jitter;
     double apply_head_switch;
     double apply_dropouts;
-} heisei_vhs_t;
+} handy_vhs_t;
 
-static double rng(heisei_vhs_t* inst) {
+static double rng(handy_vhs_t* inst) {
     inst->rng_seed = inst->rng_seed * 1103515245 + 12345;
     return (double)((inst->rng_seed >> 16) & 0x7FFF) / 32768.0;
 }
@@ -91,7 +91,7 @@ static void apply_blur(uint32_t* data, int w, int h, double cutoff_y) {
     free(temp);
 }
 
-static void apply_chroma_shift(uint32_t* data, int w, int h, int shift, heisei_vhs_t* inst) {
+static void apply_chroma_shift(uint32_t* data, int w, int h, int shift, handy_vhs_t* inst) {
     (void)inst;
     uint32_t* temp = (uint32_t*)malloc(w * h * sizeof(uint32_t));
     memcpy(temp, data, w * h * sizeof(uint32_t));
@@ -126,7 +126,7 @@ static void apply_chroma_shift(uint32_t* data, int w, int h, int shift, heisei_v
 }
 
 static void apply_noise(uint32_t* data, int w, int h, 
-                        double noise_y, double noise_c, heisei_vhs_t* inst) {
+                        double noise_y, double noise_c, handy_vhs_t* inst) {
     for (int i = 0; i < w * h; i++) {
         uint32_t pixel = data[i];
         uint8_t r = (pixel >> 16) & 0xFF;
@@ -156,7 +156,7 @@ static void apply_noise(uint32_t* data, int w, int h,
     }
 }
 
-static void apply_ringing(uint32_t* data, int w, int h, double amount, heisei_vhs_t* inst) {
+static void apply_ringing(uint32_t* data, int w, int h, double amount, handy_vhs_t* inst) {
     (void)inst;
     uint32_t* temp = (uint32_t*)malloc(w * h * sizeof(uint32_t));
     memcpy(temp, data, w * h * sizeof(uint32_t));
@@ -219,7 +219,7 @@ static void apply_tone_mapping(uint32_t* data, int w, int h, double low, double 
     }
 }
 
-static void apply_jitter(uint32_t* data, int w, int h, double amp, double freq, heisei_vhs_t* inst) {
+static void apply_jitter(uint32_t* data, int w, int h, double amp, double freq, handy_vhs_t* inst) {
     (void)inst;
     uint32_t* temp = (uint32_t*)malloc(w * h * sizeof(uint32_t));
     memcpy(temp, data, w * h * sizeof(uint32_t));
@@ -238,7 +238,7 @@ static void apply_jitter(uint32_t* data, int w, int h, double amp, double freq, 
     free(temp);
 }
 
-static void apply_head_switch(uint32_t* data, int w, int h, int rows, heisei_vhs_t* inst) {
+static void apply_head_switch(uint32_t* data, int w, int h, int rows, handy_vhs_t* inst) {
     if (rows <= 0) return;
     
     int start_y = h - rows;
@@ -269,7 +269,7 @@ static void apply_head_switch(uint32_t* data, int w, int h, int rows, heisei_vhs
     }
 }
 
-static void apply_dropouts(uint32_t* data, int w, int h, int count, heisei_vhs_t* inst) {
+static void apply_dropouts(uint32_t* data, int w, int h, int count, handy_vhs_t* inst) {
     for (int i = 0; i < count; i++) {
         int y = (int)(rng(inst) * h);
         int start_x = (int)(rng(inst) * w);
@@ -331,7 +331,7 @@ static void apply_scanlines(uint32_t* data, int w, int h, double weight) {
     }
 }
 
-static void apply_jpeg(uint32_t* data, int w, int h, double quality, heisei_vhs_t* inst) {
+static void apply_jpeg(uint32_t* data, int w, int h, double quality, handy_vhs_t* inst) {
     double strength = (100.0 - quality) / 100.0;
     if (strength <= 0) return;
     
@@ -371,8 +371,8 @@ void f0r_deinit() {
 }
 
 void f0r_get_plugin_info(f0r_plugin_info_t* info) {
-    info->name = "Heisei VHS";
-    info->author = "Heisei VHS Authors";
+    info->name = "Handy VHS";
+    info->author = "Handy VHS Authors";
     info->plugin_type = F0R_PLUGIN_MODEL_FILTER;
     info->color_model = F0R_COLOR_MODEL_RGBA8888;
     info->frei0r_version = 1;
@@ -478,7 +478,7 @@ void f0r_get_param_info(f0r_param_info_t* info, int param_index) {
 }
 
 f0r_instance_t f0r_construct(unsigned int width, unsigned int height) {
-    heisei_vhs_t* inst = (heisei_vhs_t*)malloc(sizeof(heisei_vhs_t));
+    handy_vhs_t* inst = (handy_vhs_t*)malloc(sizeof(handy_vhs_t));
     if (!inst) return NULL;
     
     inst->width = width;
@@ -522,7 +522,7 @@ void f0r_destruct(f0r_instance_t instance) {
 }
 
 void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_index) {
-    heisei_vhs_t* inst = (heisei_vhs_t*)instance;
+    handy_vhs_t* inst = (handy_vhs_t*)instance;
     double val = *(double*)param;
     
     switch (param_index) {
@@ -548,7 +548,7 @@ void f0r_set_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 }
 
 void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_index) {
-    heisei_vhs_t* inst = (heisei_vhs_t*)instance;
+    handy_vhs_t* inst = (handy_vhs_t*)instance;
     double* val = (double*)param;
     
     switch (param_index) {
@@ -576,7 +576,7 @@ void f0r_get_param_value(f0r_instance_t instance, f0r_param_t param, int param_i
 void f0r_update(f0r_instance_t instance, double time,
                 const uint32_t* inframe, uint32_t* outframe) {
     (void)time;
-    heisei_vhs_t* inst = (heisei_vhs_t*)instance;
+    handy_vhs_t* inst = (handy_vhs_t*)instance;
     int w = inst->width;
     int h = inst->height;
     
