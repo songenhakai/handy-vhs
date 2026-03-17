@@ -31,7 +31,7 @@ class HandyVHS {
             cast_b: 0.93,
             apply_scanlines: true,
             scanline_weight: 0.91,
-            vhs_resolution: 200
+            vhs_resolution: 0
         };
         this.rng = this._createRNG();
     }
@@ -79,7 +79,15 @@ class HandyVHS {
         const origHeight = this.canvas.height;
         this.rng = this._createRNG(Date.now());
 
-        const vhsWidth = Math.min(this.params.vhs_resolution, origWidth);
+        let vhsWidth;
+        if (this.params.vhs_resolution <= 0) {
+            const aspectRatio = origWidth / origHeight;
+            const targetHeight = Math.min(288, origHeight / 3);
+            vhsWidth = Math.round(targetHeight * aspectRatio);
+            vhsWidth = Math.max(160, Math.min(400, vhsWidth));
+        } else {
+            vhsWidth = Math.min(this.params.vhs_resolution, origWidth);
+        }
         const scale = vhsWidth / origWidth;
         const vhsHeight = Math.round(origHeight * scale);
 
@@ -421,10 +429,9 @@ class HandyVHS {
                 const edgeFade = Math.min(1, Math.min(dx, len - dx - 1) / 5);
                 blendFactor *= edgeFade;
 
-                    data[idx] = Math.round(originalR * (1 - blendFactor) + dropoutR * blendFactor);
-                    data[idx + 1] = Math.round(originalG * (1 - blendFactor) + dropoutG * blendFactor);
-                    data[idx + 2] = Math.round(originalB * (1 - blendFactor) + dropoutB * blendFactor);
-                }
+                data[idx] = Math.round(originalR * (1 - blendFactor) + dropoutR * blendFactor);
+                data[idx + 1] = Math.round(originalG * (1 - blendFactor) + dropoutG * blendFactor);
+                data[idx + 2] = Math.round(originalB * (1 - blendFactor) + dropoutB * blendFactor);
             }
         }
     }

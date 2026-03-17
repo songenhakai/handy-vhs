@@ -306,9 +306,12 @@
             <div class="section">
                 <h4>Analog Layer</h4>
                 <div class="row">
+                    <label><input type="checkbox" id="p_auto_resolution" checked> Auto Resolution</label>
+                </div>
+                <div class="row" id="resolution-row" style="display: none;">
                     <label>Resolution</label>
-                    <input type="range" id="p_vhs_resolution" min="160" max="640" step="10" value="200">
-                    <span class="val" id="v_vhs_resolution">200</span>
+                    <input type="range" id="p_vhs_resolution" min="160" max="480" step="10" value="280">
+                    <span class="val" id="v_vhs_resolution">280</span>
                 </div>
                 <div class="row">
                     <label>Blur</label>
@@ -457,10 +460,17 @@
             input.addEventListener('change', autoProcess);
         });
 
+        document.getElementById('p_auto_resolution').addEventListener('change', (e) => {
+            const resolutionRow = document.getElementById('resolution-row');
+            resolutionRow.style.display = e.target.checked ? 'none' : 'flex';
+            autoProcess();
+        });
+
         let processTimeout = null;
         let isProcessing = false;
 
         function getParams() {
+            const autoRes = document.getElementById('p_auto_resolution').checked;
             return {
                 apply_jpeg: document.getElementById('p_apply_jpeg').checked,
                 jpeg_quality: parseFloat(document.getElementById('p_jpeg_quality').value),
@@ -468,7 +478,7 @@
                 sharpen_amount: parseFloat(document.getElementById('p_sharpen_amount').value),
                 tone_low: parseFloat(document.getElementById('p_tone_low').value),
                 tone_high: parseFloat(document.getElementById('p_tone_high').value),
-                vhs_resolution: parseInt(document.getElementById('p_vhs_resolution').value),
+                vhs_resolution: autoRes ? 0 : parseInt(document.getElementById('p_vhs_resolution').value),
                 cutoff_y: parseFloat(document.getElementById('p_cutoff_y').value),
                 chroma_shift_x: parseInt(document.getElementById('p_chroma_shift_x').value),
                 noise_intensity_y: parseFloat(document.getElementById('p_noise_intensity_y').value),
