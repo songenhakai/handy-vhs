@@ -63,32 +63,26 @@ static void apply_color_cast(uint32_t* data, int w, int h,
 }
 
 static void apply_blur(uint32_t* data, int w, int h, double cutoff_y) {
-    int radius = (int)((1.0 - cutoff_y) * 3) + 1;
-    uint32_t* temp = (uint32_t*)malloc(w * h * sizeof(uint32_t));
-    memcpy(temp, data, w * h * sizeof(uint32_t));
+    int radius = (int)((1.0 - cutoff_y) * 5) + 1;
 
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             int sum_r = 0, sum_g = 0, sum_b = 0, count = 0;
 
-            for (int dy = -radius; dy <= radius; dy++) {
-                for (int dx = -radius; dx <= radius; dx++) {
-                    int nx = x + dx < 0 ? 0 : (x + dx >= w ? w - 1 : x + dx);
-                    int ny = y + dy < 0 ? 0 : (y + dy >= h ? h - 1 : y + dy);
-                    uint32_t p = temp[ny * w + nx];
-                    sum_r += (p >> 16) & 0xFF;
-                    sum_g += (p >> 8) & 0xFF;
-                    sum_b += p & 0xFF;
-                    count++;
-                }
+            for (int dx = -radius; dx <= radius; dx++) {
+                int nx = x + dx < 0 ? 0 : (x + dx >= w ? w - 1 : x + dx);
+                uint32_t p = data[y * w + nx];
+                sum_r += (p >> 16) & 0xFF;
+                sum_g += (p >> 8) & 0xFF;
+                sum_b += p & 0xFF;
+                count++;
             }
 
-            uint32_t pixel = temp[y * w + x];
+            uint32_t pixel = data[y * w + x];
             uint8_t a = (pixel >> 24) & 0xFF;
             data[y * w + x] = (a << 24) | ((sum_r/count) << 16) | ((sum_g/count) << 8) | (sum_b/count);
         }
     }
-    free(temp);
 }
 
 static void apply_chroma_shift(uint32_t* data, int w, int h, int shift, handy_vhs_t* inst) {
@@ -274,46 +268,39 @@ static void apply_dropouts(uint32_t* data, int w, int h, int count, handy_vhs_t*
         int y = (int)(rng(inst) * h);
         int start_x = (int)(rng(inst) * w);
         int len = (int)(rng(inst) *80) + 10;
-        int thickness = (int)(rng(inst) * 2) + 1;
         
-        for (int t = 0; t < thickness; t++) {
-            int row_y = y + t;
-            if (row_y >= h) row_y = h - 1;
-            if (row_y < 0) row_y = 0;
+        for (int dx = 0; dx < len && (start_x + dx) < w; dx++) {
+            int x = start_x + dx;
+            uint32_t pixel = data[y * w + x];
+            uint8_t r = (pixel >> 16) & 0xFF;
+            uint8_t g = (pixel >> 8) & 0xFF;
+            uint8_t b = pixel & 0xFF;
             
-            for (int dx = 0; dx < len && (start_x + dx) < w; dx++) {
-                int x = start_x + dx;
-                uint32_t pixel = data[row_y * w + x];
-                uint8_t r = (pixel >> 16) & 0xFF;
-                uint8_t g = (pixel >>8) & 0xFF;
-                uint8_t b = pixel & 0xFF;
-                
-                double brightness = (r + g + b) / 3.0;
-                uint8_t dropout_val;
-                
-                if (rng(inst) < 0.8) {
-                    if (rng(inst) < 0.6) {
-                        dropout_val = (uint8_t)(rng(inst) * 255);
-                    } else {
-                        dropout_val = brightness > 128 ? 255 : 0;
-                    }
+            double brightness = (r + g + b) / 3.0;
+            uint8_t dropout_val;
+            
+            if (rng(inst) < 0.8) {
+                if (rng(inst) < 0.6) {
+                    dropout_val = (uint8_t)(rng(inst) * 255);
                 } else {
-                    dropout_val = brightness > 128 ? 255 : (uint8_t)200;
+                    dropout_val = brightness > 128 ? 255 : 0;
                 }
-                
-                double blend = 0.7 + rng(inst) * 0.3;
-                double edge_fade = 1.0;
-                if (dx < 5) edge_fade = dx / 5.0;
-                else if (len - dx - 1 < 5) edge_fade = (len - dx - 1) / 5.0;
-                blend *= edge_fade;
-                
-                r = (uint8_t)(r * (1 - blend) + dropout_val * blend);
-                g = (uint8_t)(g * (1 - blend) + dropout_val * blend);
-                b = (uint8_t)(b * (1 - blend) + dropout_val * blend);
-                
-                uint8_t a = (pixel >> 24) & 0xFF;
-                data[row_y * w + x] = (a << 24) | (r << 16) | (g <<8) | b;
+            } else {
+                dropout_val = brightness > 128 ? 255 : (uint8_t)200;
             }
+            
+            double blend = 0.7 + rng(inst) * 0.3;
+            double edge_fade = 1.0;
+            if (dx < 5) edge_fade = dx / 5.0;
+            else if (len - dx - 1 < 5) edge_fade = (len - dx - 1) / 5.0;
+            blend *= edge_fade;
+            
+            r = (uint8_t)(r * (1 - blend) + dropout_val * blend);
+            g = (uint8_t)(g * (1 - blend) + dropout_val * blend);
+            b = (uint8_t)(b * (1 - blend) + dropout_val * blend);
+            
+            uint8_t a = (pixel >> 24) & 0xFF;
+            data[y * w + x] = (a << 24) | (r << 16) | (g <<8) | b;
         }
     }
 }

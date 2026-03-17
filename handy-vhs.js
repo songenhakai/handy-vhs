@@ -200,38 +200,26 @@ class HandyVHS {
     }
 
     _applyLuminanceBlur(data, width, height) {
-        const blurRadius = Math.ceil((1 - this.params.cutoff_y) * 3);
-        const temp = new Float32Array(data.length);
+        const blurRadius = Math.ceil((1 - this.params.cutoff_y) * 5);
         
-        for (let i = 0; i < data.length; i++) {
-            temp[i] = data[i];
-        }
-
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 let sumR = 0, sumG = 0, sumB = 0, count = 0;
                 
-                for (let dy = -blurRadius; dy <= blurRadius; dy++) {
-                    for (let dx = -blurRadius; dx <= blurRadius; dx++) {
-                        const nx = Math.min(width - 1, Math.max(0, x + dx));
-                        const ny = Math.min(height - 1, Math.max(0, y + dy));
-                        const idx = (ny * width + nx) * 4;
-                        sumR += data[idx];
-                        sumG += data[idx + 1];
-                        sumB += data[idx + 2];
-                        count++;
-                    }
+                for (let dx = -blurRadius; dx <= blurRadius; dx++) {
+                    const nx = Math.min(width - 1, Math.max(0, x + dx));
+                    const idx = (y * width + nx) * 4;
+                    sumR += data[idx];
+                    sumG += data[idx + 1];
+                    sumB += data[idx + 2];
+                    count++;
                 }
 
                 const idx = (y * width + x) * 4;
-                temp[idx] = sumR / count;
-                temp[idx + 1] = sumG / count;
-                temp[idx + 2] = sumB / count;
+                data[idx] = Math.round(sumR / count);
+                data[idx + 1] = Math.round(sumG / count);
+                data[idx + 2] = Math.round(sumB / count);
             }
-        }
-
-        for (let i = 0; i < data.length; i++) {
-            data[i] = Math.round(temp[i]);
         }
     }
 
@@ -405,37 +393,33 @@ class HandyVHS {
             const y = Math.floor(this.rng() * height);
             const startX = Math.floor(this.rng() * width);
             const len = Math.floor(this.rng() * dropout_max_len) + 10;
-            const thickness = Math.floor(this.rng() * 2) + 1;
+            
+            for (let dx = 0; dx < len && (startX + dx) < width; dx++) {
+                const x = startX + dx;
+                const idx = (y * width + x) * 4;
 
-            for (let t = 0; t < thickness; t++) {
-                const rowY = Math.min(height - 1, Math.max(0, y + t));
-                
-                for (let dx = 0; dx < len && (startX + dx) < width; dx++) {
-                    const x = startX + dx;
-                    const idx = (rowY * width + x) * 4;
+                const originalR = original[idx];
+                const originalG = original[idx + 1];
+                const originalB = original[idx + 2];
+                const originalBrightness = (originalR + originalG + originalB) / 3;
 
-                    const originalR = original[idx];
-                    const originalG = original[idx + 1];
-                    const originalB = original[idx + 2];
-                    const originalBrightness = (originalR + originalG + originalB) / 3;
+                let dropoutR, dropoutG, dropoutB;
+                let blendFactor = 0.7 + this.rng() * 0.3;
 
-                    let dropoutR, dropoutG, dropoutB;
-                    let blendFactor = 0.7 + this.rng() * 0.3;
-
-                    if (this.rng() < dropout_noise_freq) {
-                        if (this.rng() < 0.6) {
-                            const noise = this.rng() * 255;
-                            dropoutR = dropoutG = dropoutB = noise;
-                        } else {
-                            dropoutR = dropoutG = dropoutB = originalBrightness > 128 ? 255 : 0;
-                        }
+                if (this.rng() < dropout_noise_freq) {
+                    if (this.rng() < 0.6) {
+                        const noise = this.rng() * 255;
+                        dropoutR = dropoutG = dropoutB = noise;
                     } else {
-                        const whiteLevel = originalBrightness > 128 ? 255 : 200;
-                        dropoutR = dropoutG = dropoutB = whiteLevel;
+                        dropoutR = dropoutG = dropoutB = originalBrightness > 128 ? 255 : 0;
                     }
+                } else {
+                    const whiteLevel = originalBrightness > 128 ? 255 : 200;
+                    dropoutR = dropoutG = dropoutB = whiteLevel;
+                }
 
-                    const edgeFade = Math.min(1, Math.min(dx, len - dx - 1) / 5);
-                    blendFactor *= edgeFade;
+                const edgeFade = Math.min(1, Math.min(dx, len - dx - 1) / 5);
+                blendFactor *= edgeFade;
 
                     data[idx] = Math.round(originalR * (1 - blendFactor) + dropoutR * blendFactor);
                     data[idx + 1] = Math.round(originalG * (1 - blendFactor) + dropoutG * blendFactor);
