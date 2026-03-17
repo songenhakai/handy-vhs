@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include "frei0r.h"
 #include <stdlib.h>
 #include <string.h>
