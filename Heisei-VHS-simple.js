@@ -462,23 +462,82 @@ class HeiseiVHS {
 
     _applyJPEGArtifacts(data, width, height) {
         const blockSize = 8;
-        const quality = this.params.jpeg_quality / 100;
+        const quality = this.params.jpeg_quality;
+        const strength = Math.max(0, (100 - quality) / 100);
+        
+        if (strength === 0) return;
 
         for (let by = 0; by < height; by += blockSize) {
             for (let bx = 0; bx < width; bx += blockSize) {
-                const shiftR = Math.round((this.rng() - 0.5) * (1 - quality) * 10);
-                const shiftG = Math.round((this.rng() - 0.5) * (1 - quality) * 10);
-                const shiftB = Math.round((this.rng() - 0.5) * (1 - quality) * 10);
+                let avgR = 0, avgG = 0, avgB = 0, count = 0;
+                
+                for (let dy = 0; dy < blockSize && (by + dy) < height; dy++) {
+                    for (let dx = 0; dx < blockSize && (bx + dx) < width; dx++) {
+                        const idx = ((by + dy) * width + (bx + dx)) * 4;
+                        avgR += data[idx];
+                        avgG += data[idx + 1];
+                        avgB += data[idx + 2];
+                        count++;
+                    }
+                }
+                avgR /= count;
+                avgG /= count;
+                avgB /= count;
 
-                for (let y = by; y < Math.min(by + blockSize, height); y++) {
-                    for (let x = bx; x < Math.min(bx + blockSize, width); x++) {
-                        const idx = (y * width + x) * 4;
+                for (let dy = 0; dy < blockSize && (by + dy) < height; dy++) {
+                    for (let dx = 0; dx < blockSize && (bx + dx) < width; dx++) {
+                        const idx = ((by + dy) * width + (bx + dx)) * 4;
+                        
+                        const origR = data[idx];
+                        const origG = data[idx + 1];
+                        const origB = data[idx + 2];
 
-                        if (x % blockSize === 0 && y % blockSize === 0) {
-                            const noise = (this.rng() - 0.5) * (1 - quality) * 20;
-                            data[idx] = Math.max(0, Math.min(255, data[idx] + shiftR + noise));
-                            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + shiftG + noise));
-                            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + shiftB + noise));
+                        const blockNoise = strength * 30;
+                        const noiseR = (this.rng() - 0.5) * blockNoise;
+                        const noiseG = (this.rng() - 0.5) * blockNoise;
+                        const noiseB = (this.rng() - 0.5) * blockNoise;
+                        
+                        data[idx] = Math.max(0, Math.min(255, origR + noiseR));
+                        data[idx + 1] = Math.max(0, Math.min(255, origG + noiseG));
+                        data[idx + 2] = Math.max(0, Math.min(255, origB + noiseB));
+
+                        const isEdge = (dx === 0 || dx === blockSize - 1 || dy === 0 || dy === blockSize - 1);
+                        if (isEdge && strength > 0.3) {
+                            const edgeStrength = strength * 5;
+                            data[idx] = Math.max(0, Math.min(255, data[idx] + (this.rng() - 0.5) * edgeStrength));
+                            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + (this.rng() - 0.5) * edgeStrength));
+                            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + (this.rng() - 0.5) * edgeStrength));
+                        }
+
+                        if (strength > 0.5) {
+                            const colorShift = (avgR - data[idx]) * strength * 0.1;
+                            data[idx] = Math.max(0, Math.min(255, data[idx] + colorShift));
+                            data[idx + 1] = Math.max(0, Math.min(255, data[idx + 1] + (avgG - data[idx + 1]) * strength * 0.1));
+                            data[idx + 2] = Math.max(0, Math.min(255, data[idx + 2] + (avgB - data[idx + 2]) * strength * 0.1));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (strength > 0.6) {
+            const artifactChance = (strength - 0.6) * 2;
+            for (let by = 0; by < height; by += blockSize) {
+                for (let bx = 0; bx < width; bx += blockSize) {
+                    if (this.rng() < artifactChance * 0.01) {
+                        const corruptType = Math.floor(this.rng() * 3);
+                        
+                        for (let dy = 0; dy < blockSize && (by + dy) < height; dy++) {
+                            for (let dx = 0; dx < blockSize && (bx + dx) < width; dx++) {
+                                const idx = ((by + dy) * width + (bx + dx)) * 4;
+                                
+                                if (corruptType === 0) {
+                                    const shift = Math.floor(this.rng() * 50);
+                                    data[idx] = Math.min(255, data[idx] + shift);
+                                    data[idx + 1] = Math.min(255, data[idx + 1] + shift);
+                                    data[idx + 2] = Math.min(255, data[idx + 2] + shift);
+                                }
+                            }
                         }
                     }
                 }
